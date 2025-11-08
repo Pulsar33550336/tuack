@@ -18,7 +18,7 @@ import platform
 import gettext
 import yaml
 from . import base
-from .base import log, pjoin
+from .base import logger as log, pjoin
 try:
 	import jinja2
 except:

@@ -4,7 +4,7 @@ from __future__ import print_function
 import os, re, sys, json, requests
 from functools import wraps
 from . import base
-from .base import log, pjoin
+from .base import logger as log, pjoin
 
 vars_re = r"\{%-? *do *vars\.__setitem__\( *'sample_id' *, *(\d+) *\) -%\}"
 

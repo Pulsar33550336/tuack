@@ -9,7 +9,7 @@ else:
 	from __builtin__ import *
 import json
 from .num2chinese import *
-from .base import log
+from .base import logger as log
 
 def int_lg(num):
 	if num == 0:

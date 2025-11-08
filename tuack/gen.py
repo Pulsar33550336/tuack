@@ -17,7 +17,7 @@ from threading import Timer
 from . import num2chinese
 import platform
 from . import base
-from .base import log, pjoin
+from .base import logger as log, pjoin
 
 def find_all_data(kind, folder, key, conf = None):
 	if not conf:

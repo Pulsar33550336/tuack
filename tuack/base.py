@@ -15,7 +15,7 @@ from multiprocessing import Process, Queue
 from functools import wraps
 from threading import Timer
 import platform
-import logging
+from loguru import logger
 import traceback
 import yaml
 from inspect import isfunction, getsource
@@ -71,6 +71,7 @@ json_version = 2
 work = None
 system = platform.system()
 out_system = system
+verbose = False
 def get_linux_version():
 	try:
 		return open('/etc/issue').read().split('')[0]
@@ -118,8 +119,8 @@ copied_data = set()
 no_compiling = False
 path = os.path.dirname(os.path.realpath(__file__))
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+#logger = loggerging.getloggerger()
+#logger.setLevel(loggerging.DEBUG)
 
 class NoFileException(Exception):
 	pass
@@ -155,7 +156,7 @@ class Configure(dict):
 		if type(base) == type(ext) == list:
 			return base + ext
 		elif type(base) != dict or type(ext) != dict:
-			log.error('Extend conf.json error, type of key `%s` doesn\'t match.' % key)
+			logger.error('Extend conf.json error, type of key `%s` doesn\'t match.' % key)
 			raise TypeError('extend error %s' % key)
 		ret = base.copy()
 		for key, val in ext.items():
@@ -296,7 +297,7 @@ def sorter():
 		return lambda inp : natsort.natsorted(inp, alg = natsort.ns.IGNORECASE)
 	except:
 		if not natsort_warned:
-			log.warning(u'`natsort`用于给测试点名称排序，不使用的话可能会出现10排在2前面的情况。')
+			logger.warning(u'`natsort`用于给测试点名称排序，不使用的话可能会出现10排在2前面的情况。')
 			natsort_warned = True
 		return sorted
 
@@ -349,7 +350,7 @@ class Problem(Configure):
 			else:
 				self[data] = []
 			if cases in self and type(self[cases]) == int:
-				log.warning(u'`%s`字段不再使用，使用`python -m tuack.gen upgrade`升级。' % cases)
+				logger.warning(u'`%s`字段不再使用，使用`python -m tuack.gen upgrade`升级。' % cases)
 				#to_dp = lambda i : DataPath({'case' : self['name'] + str(i), 'key' : key, 'depth' : 0, 'prefix' : self.path})
 				#self[data] = [{'cases' : [
 				#	to_dp(i) for i in range(1, self.pop(cases) + 1) \
@@ -358,7 +359,7 @@ class Problem(Configure):
 			self.__setattr__(attr, sorter()(list(tc)))
 	def set_score(self):
 		if 'packed' in self:
-			log.warning(u'题目`%s`的`packed`字段不再有效，但仍可以存在，用`python -m tuack.gen upgrade`升级。' % self.route)
+			logger.warning(u'题目`%s`的`packed`字段不再有效，但仍可以存在，用`python -m tuack.gen upgrade`升级。' % self.route)
 		for key, packed in [('data', ''), ('pre', '_pre'), ('down', '_sample')]:
 			if not hasattr(self, key):
 				self.__setattr__('packed' + packed, False)
@@ -385,23 +386,23 @@ class Problem(Configure):
 			else:
 				self.__setattr__('packed' + packed, True)
 				if num_unscored != 0:
-					log.warning(u'题目`%s`有%d个包设置了`score`，有%d个没有；总分共设%f分，将剩下%f分平分给没有的包。' % (
+					logger.warning(u'题目`%s`有%d个包设置了`score`，有%d个没有；总分共设%f分，将剩下%f分平分给没有的包。' % (
 						self.route,
 						len(data_objs) - num_unscored,
 						num_unscored,
 						total_score,
 						100 - total_score
 					))
-					log.info(u'如果你需要不等分+打包测试，请每个包设置`score`；否则请每个包都不设置`score`，此时是每个测试点同分而不是每个包同分。')
-					log.info(u'一部分包设置`score`，另一部分不设置将可能导致导出其他格式时出现问题。')
+					logger.info(u'如果你需要不等分+打包测试，请每个包设置`score`；否则请每个包都不设置`score`，此时是每个测试点同分而不是每个包同分。')
+					logger.info(u'一部分包设置`score`，另一部分不设置将可能导致导出其他格式时出现问题。')
 					if key != 'data':
-						log.warning(u'以上信息属于这道题的%s，不属于标准测试点。' % {'pre' : u'预测试点', 'down': u'样例'}[key])
+						logger.warning(u'以上信息属于这道题的%s，不属于标准测试点。' % {'pre' : u'预测试点', 'down': u'样例'}[key])
 					self.__setattr__('score' + packed, 100.)
 				else:
 					if abs(total_score - 100) > 1e-6:
-						log.warning(u'题目`%s`总分是%f分，不是100分。' % (self.route, total_score))
+						logger.warning(u'题目`%s`总分是%f分，不是100分。' % (self.route, total_score))
 						if key != 'data':
-							log.warning(u'以上信息属于这道题的%s，不属于标准测试点。' % {'pre' : u'预测试点', 'down': u'样例'}[key])
+							logger.warning(u'以上信息属于这道题的%s，不属于标准测试点。' % {'pre' : u'预测试点', 'down': u'样例'}[key])
 					self.__setattr__('score' + packed, total_score)
 
 	def extend_pathed(self, path):
@@ -412,7 +413,7 @@ class Problem(Configure):
 	def users(self):
 		def users_pathed(self, users, key = '', depth = 0):
 			if type(users) != dict:
-				log.warning(u'`json.conf`中，`users`项%s:%s已经过时，但仍可以使用，用`python -m tuack.gen upgrade`升级' % (key, users))
+				logger.warning(u'`json.conf`中，`users`项%s:%s已经过时，但仍可以使用，用`python -m tuack.gen upgrade`升级' % (key, users))
 				return {
 					'path' : self.extend_pathed(users),
 					'expected' : {}
@@ -421,7 +422,7 @@ class Problem(Configure):
 				# Is detailed description
 				if "path" not in users:
 					# Ill-formed
-					log.warning(u'`users`项%s:%s不含`path`项' % (key, users))
+					logger.warning(u'`users`项%s:%s不含`path`项' % (key, users))
 					return None
 				return {
 					'path' : self.extend_pathed(users["path"]),
@@ -453,7 +454,7 @@ class Problem(Configure):
 		elif exp is None:
 			pass
 		else:
-			log.warning('`expected`字段必须是字符串、数组或字典。')
+			logger.warning('`expected`字段必须是字符串、数组或字典。')
 		return not algo_failed
 
 	def get_data(self, key):
@@ -503,7 +504,7 @@ def load_json(path = '.', route = None):
 				elif name.endswith('yaml'):
 					conf = yaml.full_load(inp)
 				if conf.get('version', -1) > json_version:
-					log.warning(u'`conf.*`版本高于`tuack`，请升级`tuack`。')
+					logger.warning(u'`conf.*`版本高于`tuack`，请升级`tuack`。')
 				if 'folder' not in conf:
 					conf['folder'] = 'problem'
 				args = [conf, path]
@@ -529,13 +530,13 @@ def load_json(path = '.', route = None):
 				#mem_json[abs_path] = conf
 				return conf
 		except Exception as e:
-			log.warning(u'文件`%s`错误。' % pjoin(path, name))
-			log.info(e)
-			log.info('可能会导致运行到该目录下出现问题。')
+			logger.warning(u'文件`%s`错误。' % pjoin(path, name))
+			logger.info(e)
+			logger.info('可能会导致运行到该目录下出现问题。')
 	else:
 		#raise NoFileException(u'路径`%s`下找不到conf.*。' % path)
-		log.warning(u'路径`%s`下找不到conf.*。' % path)
-		log.info('可能会导致运行到该目录下出现问题。')
+		logger.warning(u'路径`%s`下找不到conf.*。' % path)
+		logger.info('可能会导致运行到该目录下出现问题。')
 
 def del_redundance(conf, red):
 	for key in red:
@@ -567,8 +568,8 @@ def save_json(conf):
 	try:
 		open(pjoin(conf.path, 'conf.' + dump_format), 'wb').write(dump_formats[dump_format](conf))
 	except Exception as e:
-		log.error(u'不支持配置文件格式`%s`。' % dump_format)
-		log.info(e)
+		logger.error(u'不支持配置文件格式`%s`。' % dump_format)
+		logger.info(e)
 
 def any_prefix(pre, st = None):
 	if not st:
@@ -604,11 +605,11 @@ def copy(source, name, target):
 			check_install('g++')
 			if os.system('g++ %s -o %s -O2 -std=c++14 -Wall' % (cpp_file, elf_file)) != 0:
 				os.chdir(ret)
-				log.error(u'`%s`编译失败。' % pjoin(full_source, cpp_file))
+				logger.error(u'`%s`编译失败。' % pjoin(full_source, cpp_file))
 				return True
 			else:
 				os.chdir(ret)
-				log.info(u'`%s`编译成功。' % pjoin(full_source, cpp_file))
+				logger.info(u'`%s`编译成功。' % pjoin(full_source, cpp_file))
 			shutil.move(pjoin(full_source, elf_file), target)
 	else:
 		shutil.copy(full_source, target)
@@ -627,8 +628,8 @@ def xopen_file(path):
 		else:
 			subprocess.call(["xdg-open", path])
 	except Exception as e:
-		log.warning(u'打开文件`%s`失败。' % path)
-		log.info(e)
+		logger.warning(u'打开文件`%s`失败。' % path)
+		logger.info(e)
 
 def deal_args():
 	global do_copy_files, do_test_progs, do_release, works, start_file, do_pack, langs, lang, sub_set, out_system, args, do_zip, do_encript, do_render, time_multiplier, git_lfs, dump_format, user_time, water_mark, noi_pas_c
@@ -688,27 +689,30 @@ def deal_args():
 		elif sys.argv[i] == '-w':
 			i += 1
 			water_mark = sys.argv[i]
+		elif sys.argv[i] == '-v':
+			verbose = True
 		elif sys.argv[i] == '-h' or sys.argv[i] == '--help':
-			log.info(u'详细用法见文档：https://git.thusaac.com/publish/tuack/wikis。')
-			log.info(u'python 脚本 [[[工作1],工作2],...] [[[选项1] 选项2] ...] [[[参数1] 参数2] ...]')
-			log.info(u'工作必须在参数前面，工作用逗号隔开，选项和参数用空格隔开。')
-			log.info(u'只有有逗号的项目可以用逗号获得多个结果，逗号前后不能有空白符。')
-			log.info(u'这套工具的大多数脚本都可以在比赛、比赛日和题目目录下运行。')
-			log.info(u'选项：')
-			log.info(u'  -i PATH             指定PATH作为工作路径，否则使用当前路径。')
-			log.info(u'  -s                  对于有输出的文件的操作，输出完以后不自动打开文件。')
-			log.info(u'  -p day0/sleep,day2  只对day0/sleep和day2进行本次操作；此路径是基于当前文件夹的，')
-			log.info(u'                      例如：在比赛日目录如day1下，则可以直接指定题目如exam；')
-			log.info(u'                      对于test，还可以指定用户或算法，如day1/problem/vfk/std.cpp。')
-			log.info(u'  -t 6.0              对于test，设置掐断时间为6.0*时间限制，用于对比不同程序的时限。')
-			log.info(u'  -o SYSTEM           对于ren，输出指定操作系统的题面，可选Windows和Linux。')
-			log.info(u'  -l zh-cn,en         对于ren，指定输出语言，不指定默认为zh-cn。')
-			log.info(u'  -w logo.png         对于ren，给PDF添加水印，默认不添加。')
-			log.info(u'  --noi-pas-c         对于ren渲染noi格式，强制在封面添加pas和c。')
-			log.info(u'  -r                  对于dump，不先尝试渲染题面。')
-			log.info(u'  -g                  对于gen，使用git-lfs。')
-			log.info(u'  -d json             对于gen，规定配置文件格式，支持json、yaml，默认yaml。')
-			log.info(u'  -u                  对于test，在linux下使用user time做测试，默认real time。')
+			logger.info(u'详细用法见文档：https://git.thusaac.com/publish/tuack/wikis。')
+			logger.info(u'python 脚本 [[[工作1],工作2],...] [[[选项1] 选项2] ...] [[[参数1] 参数2] ...]')
+			logger.info(u'工作必须在参数前面，工作用逗号隔开，选项和参数用空格隔开。')
+			logger.info(u'只有有逗号的项目可以用逗号获得多个结果，逗号前后不能有空白符。')
+			logger.info(u'这套工具的大多数脚本都可以在比赛、比赛日和题目目录下运行。')
+			logger.info(u'选项：')
+			logger.info(u'  -v                  启用详细模式。')
+			logger.info(u'  -i PATH             指定PATH作为工作路径，否则使用当前路径。')
+			logger.info(u'  -s                  对于有输出的文件的操作，输出完以后不自动打开文件。')
+			logger.info(u'  -p day0/sleep,day2  只对day0/sleep和day2进行本次操作；此路径是基于当前文件夹的，')
+			logger.info(u'                      例如：在比赛日目录如day1下，则可以直接指定题目如exam；')
+			logger.info(u'                      对于test，还可以指定用户或算法，如day1/problem/vfk/std.cpp。')
+			logger.info(u'  -t 6.0              对于test，设置掐断时间为6.0*时间限制，用于对比不同程序的时限。')
+			logger.info(u'  -o SYSTEM           对于ren，输出指定操作系统的题面，可选Windows和Linux。')
+			logger.info(u'  -l zh-cn,en         对于ren，指定输出语言，不指定默认为zh-cn。')
+			logger.info(u'  -w loggero.png         对于ren，给PDF添加水印，默认不添加。')
+			logger.info(u'  --noi-pas-c         对于ren渲染noi格式，强制在封面添加pas和c。')
+			logger.info(u'  -r                  对于dump，不先尝试渲染题面。')
+			logger.info(u'  -g                  对于gen，使用git-lfs。')
+			logger.info(u'  -d json             对于gen，规定配置文件格式，支持json、yaml，默认yaml。')
+			logger.info(u'  -u                  对于test，在linux下使用user time做测试，默认real time。')
 			
 			return False
 		else:
@@ -720,37 +724,32 @@ def deal_args():
 	return True
 
 def custom_conf():
-	get_tool_conf()
-	c = env_conf['file_log'] if 'file_log' in env_conf else {}
-	file_log = logging.FileHandler(
-		c['path'] if 'path' in c else 'tuack.log',
-		mode = c['mode'] if 'mode' in c else 'a',
-		encoding = c['encoding'] if 'encoding' in c else None
-	)
-	file_log.setLevel(c['level'] if 'level' in c else logging.INFO)
-	file_log.setFormatter(logging.Formatter(
-		c['format'] if 'format' in c else '[%(levelname).1s]%(filename)s:%(funcName)s:%(lineno)d:%(message)s'
-	))
-	log.addHandler(file_log)
+    logger.remove()
+    
+    if verbose:
+        console_format = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <cyan>{function}</cyan> | <level>{message}</level>"
+        file_format = "{time:HH:mm:ss} | {level} | {function} | {message}"
+    else:
+        console_format = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <level>{message}</level>"
+        file_format = "{time:HH:mm:ss} | {level} | {message}"
 
-	c = env_conf['bash_log'] if 'bash_log' in env_conf else {}
-	if 'encoding' in c:
-		class MyStream(object):
-			def __init__(self, stream):
-				self.stream = stream
-			def write(self, s):
-				self.stream.buffer.write(s.encode(c['encoding']))
-				self.stream.flush()
-			def flush(self):
-				self.stream.flush()
-		bash_log = logging.StreamHandler(MyStream(sys.stdout))
-	else:
-		bash_log = logging.StreamHandler()
-	bash_log.setLevel(c['level'] if 'level' in c else logging.DEBUG)
-	bash_log.setFormatter(logging.Formatter(
-		c['format'] if 'format' in c else '[%(levelname).1s]%(message)s'
-	))
-	log.addHandler(bash_log)
+    logger.add(
+        sys.stderr,
+        format=console_format,
+        level="DEBUG",
+        colorize=True,
+    )
+    
+    logger.add(
+        "tuack.log",
+		format=file_format,
+        rotation="10 MB",
+        retention="30 days", 
+        level="INFO",
+        encoding="utf-8",
+    )
+    
+    get_tool_conf()
 
 def init():
 	import __main__
@@ -758,7 +757,7 @@ def init():
 	custom_conf()
 	if not deal_args():
 		return False
-	log.info(
+	logger.info(
 		('脚本%s，工程路径%s，参数%s，开始于%s。' if python_version[0] == 2 else u'脚本%s，工程路径%s，参数%s，开始于%s。') % (
 			__main__.__file__, os.getcwd(), str(sys.argv[1:]), str(datetime.datetime.now())
 		)
@@ -815,132 +814,132 @@ class NoInstalledException(Exception):
 		return repr(self.value)
 
 def check_install(pack):
-	def check_import(pack, extra_info = '', pack_name = None, level = logging.ERROR):
+	def check_import(pack, extra_info = '', pack_name = None, level = "ERROR"):
 		try:
 			__import__(pack)
 		except Exception as e:
-			log.log(level, u'python包%s没有安装，使用 pip install %s 安装。%s' % (pack, pack_name if pack_name else pack, extra_info))
+			logger.logger(level, u'python包%s没有安装，使用 pip install %s 安装。%s' % (pack, pack_name if pack_name else pack, extra_info))
 			if system == 'Windows':
-				log.info(u'如果pip没有安装，Windows下推荐用Anaconda等集成环境。')
+				logger.info(u'如果pip没有安装，Windows下推荐用Anaconda等集成环境。')
 			if system == 'Linux':
-				log.info(u'如果pip没有安装，Ubuntu下用 sudo apt install python-pip 安装。')
+				logger.info(u'如果pip没有安装，Ubuntu下用 sudo apt install python-pip 安装。')
 			raise NoInstalledException(str(e))
 	check_pyside = lambda : check_import('PySide', u'注意这个包只能在 python2 下使用。', 'pyside')
-	check_natsort = lambda : check_import('natsort', level = logging.WARNING)
+	check_natsort = lambda : check_import('natsort', level = "WARNING")
 	def check_pandoc():
 		ret = os.system('pandoc -v')
 		if ret != 0:
-			log.error(u'格式转换工具pandoc没有安装。')
+			logger.error(u'格式转换工具pandoc没有安装。')
 			if system == 'Windows':
-				log.info(u'Windows用户去官方网站下载安装，安装好后把pandoc.exe所在路径添加到环境变量PATH中。')
+				logger.info(u'Windows用户去官方网站下载安装，安装好后把pandoc.exe所在路径添加到环境变量PATH中。')
 			if system == 'Linux':
-				log.info(u'Ubuntu下用 sudo apt install pandoc 安装。')
+				logger.info(u'Ubuntu下用 sudo apt install pandoc 安装。')
 			raise NoInstalledException('pandoc not found')
 	def check_xelatex():
 		ret = os.system('xelatex --version')
 		if ret != 0:
-			log.error(u'TeX渲染工具XeLaTeX没有安装。')
+			logger.error(u'TeX渲染工具XeLaTeX没有安装。')
 			if system == 'Windows':
-				log.info(u'Windows下可以先安装MiKTeX，在首次运行的时候会再提示安装后续文件。')
+				logger.info(u'Windows下可以先安装MiKTeX，在首次运行的时候会再提示安装后续文件。')
 			if system == 'Linux':
-				log.info(u'Ubuntu下先用 sudo apt install texlive-xetex texlive-fonts-recommended texlive-latex-extra 安装工具；')
-				log.info(u'然后一般会因为缺少有些字体而报错（Windows有使用权，但Ubuntu没有，所以没有预装这些字体）。')
-				log.info(u'可以使用下列页面上的方法安装缺少的字体或是把win下的字体复制过来。')
-				log.info(u'http://linux-wiki.cn/wiki/zh-hans/LaTeX%E4%B8%AD%E6%96%87%E6%8E%92%E7%89%88%EF%BC%88%E4%BD%BF%E7%94%A8XeTeX%EF%BC%89')
+				logger.info(u'Ubuntu下先用 sudo apt install texlive-xetex texlive-fonts-recommended texlive-latex-extra 安装工具；')
+				logger.info(u'然后一般会因为缺少有些字体而报错（Windows有使用权，但Ubuntu没有，所以没有预装这些字体）。')
+				logger.info(u'可以使用下列页面上的方法安装缺少的字体或是把win下的字体复制过来。')
+				logger.info(u'http://linux-wiki.cn/wiki/zh-hans/LaTeX%E4%B8%AD%E6%96%87%E6%8E%92%E7%89%88%EF%BC%88%E4%BD%BF%E7%94%A8XeTeX%EF%BC%89')
 			raise NoInstalledException('xelatex not found')
 	def check_git():
 		ret = os.system('git --version')
 		if ret != 0:
-			log.warning(u'版本管理工具git没有安装，如果工程用git维护则你的修改可能无法成功提交。')
-			log.info(u'一个可能的安装教程见这里：')
-			log.info(u'https://git-scm.com/book/zh/v2/%E8%B5%B7%E6%AD%A5-%E5%AE%89%E8%A3%85-Git')
+			logger.warning(u'版本管理工具git没有安装，如果工程用git维护则你的修改可能无法成功提交。')
+			logger.info(u'一个可能的安装教程见这里：')
+			logger.info(u'https://git-scm.com/book/zh/v2/%E8%B5%B7%E6%AD%A5-%E5%AE%89%E8%A3%85-Git')
 			if system == 'Windows':
-				log.info(u'Windows下有多种不同的git版本，大家可以多交流好用的版本。')
-			log.info(u'git入门可以参看这里：')
-			log.info(u'http://rogerdudler.github.io/git-guide/index.zh.html')
-			log.info(u'一般推荐用ssh方式克隆仓库，并用公私钥保证安全，添加密钥的方式一般仓库的git网页上能找到。')
+				logger.info(u'Windows下有多种不同的git版本，大家可以多交流好用的版本。')
+			logger.info(u'git入门可以参看这里：')
+			logger.info(u'http://rogerdudler.github.io/git-guide/index.zh.html')
+			logger.info(u'一般推荐用ssh方式克隆仓库，并用公私钥保证安全，添加密钥的方式一般仓库的git网页上能找到。')
 			raise NoInstalledException('git not found')
 	def check_git_lfs():
 		ret = os.system('git lfs')
 		if ret != 0:
-			log.warning(u'git大文件系统lfs没有安装，如果工程使用了它你可能无法同步。')
-			log.info(u'因为有些评测数据比较大，所以一般要求用git lfs大文件系统（Large File System）管理评测数据（in/ans）')
-			log.info(u'一个可能的安装教程见这里：')
-			log.info(u'https://git-lfs.github.com/')
-			log.info(u'如果你用本工具的generator生成题目工程，那么你装好lfs以后一般可以不用再手工指定in和ans文件用lfs管理。')
-			log.info(u'如果你的多人合作工程用到了lfs，请务必不要在没有安装lfs前把数据添加到工程中！')
+			logger.warning(u'git大文件系统lfs没有安装，如果工程使用了它你可能无法同步。')
+			logger.info(u'因为有些评测数据比较大，所以一般要求用git lfs大文件系统（Large File System）管理评测数据（in/ans）')
+			logger.info(u'一个可能的安装教程见这里：')
+			logger.info(u'https://git-lfs.github.com/')
+			logger.info(u'如果你用本工具的generator生成题目工程，那么你装好lfs以后一般可以不用再手工指定in和ans文件用lfs管理。')
+			logger.info(u'如果你的多人合作工程用到了lfs，请务必不要在没有安装lfs前把数据添加到工程中！')
 			raise NoInstalledException('git lfs not found')
 
 	def check_gpp():
 		ret = os.system('g++ -v')
 		if ret != 0:
-			log.warning(u'g++未安装，将可能无法测试C++代码。')
+			logger.warning(u'g++未安装，将可能无法测试C++代码。')
 			raise NoInstalledException('g++ not found')
 	
 	def check_gcc():
 		ret = os.system('gcc -v')
 		if ret != 0:
-			log.warning(u'gcc未安装，将可能无法测试C代码。')
+			logger.warning(u'gcc未安装，将可能无法测试C代码。')
 			raise NoInstalledException('gcc not found')
 			
 	def check_java():
 		ret = os.system('javac -version')
 		if ret != 0:
-			log.warning(u'javac未安装，将可能无法测试Java代码。')
+			logger.warning(u'javac未安装，将可能无法测试Java代码。')
 			raise NoInstalledException('javac not found')
 		ret = os.system('java -version')
 		if ret != 0:
-			log.warning(u'java未安装，将可能无法测试Java代码。')
+			logger.warning(u'java未安装，将可能无法测试Java代码。')
 			raise NoInstalledException('java not found')
 
 	def check_py2():
 		ret = os.system('python2 --version')
 		if ret != 0:
-			log.warning(u'python2未安装，将可能无法测试Python2代码。')
+			logger.warning(u'python2未安装，将可能无法测试Python2代码。')
 			raise NoInstalledException('python2 not found')
 
 	def check_py3():
 		ret = os.system('python3 --version')
 		if ret != 0:
-			log.warning(u'python3未安装，将可能无法测试Python3代码。')
+			logger.warning(u'python3未安装，将可能无法测试Python3代码。')
 			raise NoInstalledException('python3 not found')
 
 	def check_py():
 		ret = os.system('python --version')
 		if ret != 0:
-			log.warning(u'python未安装，将可能无法测试Python代码。')
+			logger.warning(u'python未安装，将可能无法测试Python代码。')
 			raise NoInstalledException('python not found')
 			
 	def check_flex():
 		ret = os.system('flex --version')
 		if ret != 0:
-			log.warning(u'flex未安装，将可能无法检查题面格式。')
+			logger.warning(u'flex未安装，将可能无法检查题面格式。')
 			raise NoInstalledException('flex not found')
 
 	def check_bison():
 		ret = os.system('bison --version')
 		if ret != 0:
-			log.warning(u'bison未安装，将可能无法检查题面格式。')
+			logger.warning(u'bison未安装，将可能无法检查题面格式。')
 			raise NoInstalledException('bison not found')
 			
 	def check_format():
 		ret = os.system('"%s" -v' % pjoin(tool_path, format_checker_name))
 		if ret != 0:
-			log.warning(u'format checker未安装，使用`python -m tuack.install format`安装。')
+			logger.warning(u'format checker未安装，使用`python -m tuack.install format`安装。')
 			raise NoInstalledException('format not found')
 			
 	def check_unrar():
 		ret = os.system('unrar --version')
 		if ret != 0:
-			log.warning(u'unrar未安装，将无法解压rar文件，请安装unrar。')
-			log.warning(u'对于Windows用户，你可以将WinRar的安装目录添加到PATH。')
+			logger.warning(u'unrar未安装，将无法解压rar文件，请安装unrar。')
+			logger.warning(u'对于Windows用户，你可以将WinRar的安装目录添加到PATH。')
 			raise NoInstalledException('unrar not found')
 
 	def check_time():
 		ret = os.system('time ls')
 		if ret != 0:
-			log.warning(u'time未安装，将无法测试运行时间。')
-			log.warning(u'类Ubuntu用户可以用apt install time安装。')
+			logger.warning(u'time未安装，将无法测试运行时间。')
+			logger.warning(u'类Ubuntu用户可以用apt install time安装。')
 			raise NoInstalledException('time not found')
 
 	if pack in {'g++', 'cpp'}:
@@ -975,7 +974,7 @@ def change_eol(path, eol, show_path = None):
 				line = line.rstrip(b'\r\n')
 				f.write(line + eol)
 				if not space_end and (line.endswith(b' ') or line.endswith(b'\t')):
-					log.warning(u'换行符转换：文件`%s`第%d行末尾有空白符。' % (show_path if show_path else path, idx + 1))
+					logger.warning(u'换行符转换：文件`%s`第%d行末尾有空白符。' % (show_path if show_path else path, idx + 1))
 					space_end = True
 				for code in ['utf-8', 'gbk']:
 					try:
@@ -986,7 +985,7 @@ def change_eol(path, eol, show_path = None):
 						pass
 				else:
 					is_text = False
-					log.info(u'换行符转换：文件`%s`不是文本文件。' % (show_path if show_path else path))
+					logger.info(u'换行符转换：文件`%s`不是文本文件。' % (show_path if show_path else path))
 					break
 		except:
 			is_text = False
@@ -1006,8 +1005,8 @@ def run_exc(func):
 	try:
 		return (True, func())
 	except Exception as e:
-		log.error(e)
-		log.info(traceback.format_exc())
+		logger.error(e)
+		logger.info(traceback.format_exc())
 		return (False, None)
 
 def rmtree(path, ignore_errors = True):
@@ -1025,11 +1024,11 @@ def repeat(func):
 		except Exception as e:
 			las = e
 			time.sleep(1e-2)
-			log.warning(f'执行该函数第{i + 1}次：' + func.__qualname__)
+			logger.warning(f'执行该函数第{i + 1}次：' + func.__qualname__)
 		else:
 			return
-	log.error('重复执行该函数多次失败：' + func.__qualname__)
-	log.info(getsource(func))
+	logger.error('重复执行该函数多次失败：' + func.__qualname__)
+	logger.info(getsource(func))
 	raise las
 
 def remkdir(name):
@@ -1037,5 +1036,5 @@ def remkdir(name):
 		repeat(lambda : rmtree(name))
 		os.makedirs(name)
 	except Exception as e:
-		log.warning('Can\'t delete %s' % name)
-		log.warning(e)
+		logger.warning('Can\'t delete %s' % name)
+		logger.warning(e)

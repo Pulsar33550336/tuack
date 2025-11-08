@@ -16,7 +16,7 @@ from functools import wraps
 from threading import Timer
 import platform
 from . import base
-from .base import log, pjoin
+from .base import logger as log, pjoin
 
 def tsinsen_oj():
 	new_tc = []
