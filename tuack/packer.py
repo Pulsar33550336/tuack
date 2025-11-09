@@ -53,11 +53,11 @@ def copy_one_day_files(probs, day_name):
 		copy(data_path, 'chk', os.path.join(output_folder, day_name, 'data', prob['name'] + '_e'))
 		for name in os.listdir(data_path):
 			if os.path.join(data_path, name) not in base.copied_data:
-				warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
+				logger.warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
 				copy(data_path, name, os.path.join(output_folder, day_name, 'data'))
 	print('dos2unix data files')
 	if os.system('dos2unix %s 2> log' % os.path.join(output_folder, day_name, 'data', '*')) != 0:
-		warning('dos2unix failed.')
+		logger.warning('dos2unix failed.')
 	print('copy down files')
 	remkdir(os.path.join(output_folder, day_name, 'down'))
 	for prob in probs:
@@ -77,12 +77,12 @@ def copy_one_day_files(probs, day_name):
 		copy(data_path, 'checker', target_path)
 		for name in os.listdir(data_path):
 			if os.path.join(data_path, name) not in base.copied_data:
-				warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
+				logger.warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
 				copy(data_path, name, target_path)
 	print('dos2unix down files')
 	for prob in probs:
 		if os.system('dos2unix %s 2> log' % os.path.join(output_folder, day_name, 'down', prob['name'], '*')) != 0:
-			warning('dos2unix failed.')
+			logger.warning('dos2unix failed.')
 			break
 	remkdir(os.path.join(output_folder, day_name, 'discussion'))
 	for prob in probs:
@@ -90,7 +90,7 @@ def copy_one_day_files(probs, day_name):
 		if res:
 			copy(os.path.join(day_name, prob['name']), res[0] + res[1], os.path.join(output_folder, day_name, 'discussion', prob['name'] + res[1]))
 		else:
-			warning('Can\'t find discussion ppt for problem `%s`.' % prob['name'])
+			logger.warning('Can\'t find discussion ppt for problem `%s`.' % prob['name'])
 	if os.path.exists('log'):
 		os.remove('log')
 		
@@ -112,10 +112,10 @@ def pc2_copy_one_day_files(probs, day_name):
 		copy(data_path, 'chk', target_path)
 		for name in os.listdir(data_path):
 			if os.path.join(data_path, name) not in base.copied_data:
-				warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
+				logger.warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
 				copy(data_path, name, target_path)
 		if os.system('dos2unix %s 2> log' % os.path.join(target_path, '*')) != 0:
-			warning('dos2unix failed.')
+			logger.warning('dos2unix failed.')
 	print('copy down files')
 	remkdir(os.path.join('pc2', day_name, 'down'))
 	for prob in probs:
@@ -134,12 +134,12 @@ def pc2_copy_one_day_files(probs, day_name):
 		copy(data_path, 'checker', target_path)
 		for name in os.listdir(data_path):
 			if os.path.join(data_path, name) not in base.copied_data:
-				warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
+				logger.warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
 				copy(data_path, name, target_path)
 	print('dos2unix down files')
 	for prob in probs:
 		if os.system('dos2unix %s 2> log' % os.path.join('pc2', day_name, 'down', prob['name'], '*')) != 0:
-			warning('dos2unix failed.')
+			logger.warning('dos2unix failed.')
 			break
 	remkdir(os.path.join('pc2', day_name, 'discussion'))
 	for prob in probs:
@@ -147,7 +147,7 @@ def pc2_copy_one_day_files(probs, day_name):
 		if res:
 			copy(os.path.join(day_name, prob['name']), res[0] + res[1], os.path.join('pc2', day_name, 'discussion', prob['name'] + res[1]))
 		else:
-			warning('Can\'t find discussion ppt for problem `%s`.' % prob['name'])
+			logger.warning('Can\'t find discussion ppt for problem `%s`.' % prob['name'])
 	if os.path.exists('log'):
 		os.remove('log')
 		
@@ -201,7 +201,7 @@ def uoj_copy_one_day_files(probs, day_name):
 				require_path = os.path.join(target_path, 'require')
 				if not os.path.exists(require_path):
 					os.makedirs(require_path)
-				warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
+				logger.warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
 				copy(data_path, name, require_path)
 		download_path = os.path.join(target_path, 'download')
 		remkdir(download_path)
@@ -215,14 +215,14 @@ def uoj_copy_one_day_files(probs, day_name):
 		copy(data_path, 'checker', download_path)
 		for name in os.listdir(data_path):
 			if os.path.join(data_path, name) not in base.copied_data:
-				warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
+				logger.warning('Unusual file \'%s\' found.' % os.path.join(data_path, name))
 				copy(data_path, name, download_path)
 		with open(os.path.join(target_path, 'problem.conf'), 'w') as f:
 			f.write(prob2uoj_conf(prob))
 		#with open(os.path.join(target_path, 'std.cpp'), 'w') as f:
 		#	f.write(empty_cpp)
 		if os.system('dos2unix %s 2> log' % os.path.join(output_folder, day_name, prob['name'], '1', '*')) != 0:
-			warning('dos2unix failed.')
+			logger.warning('dos2unix failed.')
 	if os.path.exists('log'):
 		os.remove('log')
 
@@ -272,7 +272,7 @@ def pc2():
 
 def release():
 	global output_folder
-	infom('make release files.')
+	logger.infom('make release files.')
 	remkdir('release')
 	base.no_compiling = True
 	output_folder = 'release'
@@ -319,7 +319,7 @@ def uoj():
 		os.makedirs('uoj')
 	if not os.path.exists('uoj.json'):
 		flag = False
-		warning('uoj.json not found. Cannot upload to uoj')
+		logger.warning('uoj.json not found. Cannot upload to uoj')
 	else:
 		flag = True
 	if flag:
@@ -339,7 +339,7 @@ work_list = {
 
 if __name__ == '__main__':
 	if base.init():
-		infom('Packing starts at %s.\n' % str(datetime.datetime.now()))
+		logger.infom('Packing starts at %s.\n' % str(datetime.datetime.now()))
 		for base.work in base.works:
 			work_list[base.work]()
 	else:

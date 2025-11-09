@@ -61,6 +61,11 @@ setup(
 			'sample-empty/*.*', 'sample-empty/*/*',
 			'lex/*.*', 'lex/*'
 		]
+	},
+	 entry_points={
+        'console_scripts': [
+            'tuack=tuack.cli:main'
+		]
 	}
 )
 
