@@ -47,7 +47,8 @@ python -m tuack.gen <subcommand> [args...]
   - **用法**: `python -m tuack.gen pre`
 
 - **`code` (或 `c`)**
-  - **功能**: 自动搜索题目工程下的源代码文件（如 `.cpp`, `.c`, `.py`），并将它们更新到配置文件的 `users` 字段中。
+  - **功能**: 自动搜索题目工程下的源代码文件，并将它们更新到配置文件的 `users` 字段中。
+  - **技术细节**: 该命令会递归地扫描题目目录下的所有子目录（除了 `data`, `down`, `pre` 等特殊目录），并识别扩展名为 `.cpp`, `.c`, `.pas`, `.java`, `.py` 的文件。
   - **用法**: `python -m tuack.gen code`
 
 - **`auto` (或 `a`)**
@@ -125,13 +126,15 @@ python -m tuack.test [options] [problem_path...]
   - **内存限制**: 在 `Linux` 和 `macOS` 上，会限制程序使用的最大内存，超限会导致运行时错误（Runtime Error）。Windows 平台暂不支持内存限制。
 
 - **评测流程**:
-  - 依次运行所有测试点（包括测试数据、样例数据和预测试数据）。
-  - 对于每个测试点，将程序的输出与标准答案文件（`.ans`）进行比对。
-  - 支持使用自定义校验器（`chk.cpp`）进行评测。
+  - **临时目录**: 评测时，会在项目根目录下创建一个 `tmp/` 临时目录。
+  - **文件复制**: 源代码、输入文件（重命名为 `in`）、答案文件（重命名为 `ans`）会被复制到 `tmp/` 目录中。
+  - **执行**: 在 `tmp/` 目录中编译和执行代码，程序的输出会被重定向到 `out` 文件。
+  - **比对**: `out` 文件会与 `ans` 文件进行比对。如果存在 `chk.cpp`，则会先编译它，然后用它来比对 `in`, `out`, `ans` 文件。
+  - **清理**: 每个测试点评测完毕后，`tmp/` 目录会被清空。
 
 - **结果报告**:
-  - 评测结果会以 `.csv` 格式保存在 `result/` 目录下。
-  - 报告中包含每个程序在每个测试点上的得分、运行时间、评测状态（如 `ok`, `wa`, `tle`, `re`）等详细信息。
+  - **路径**: 评测结果会以 `.csv` 格式保存在 `result/` 目录下，并以题目的完整路径命名（如 `result/day1/problem-a.csv`）。
+  - **内容**: 报告中包含每个程序在每个测试点上的得分、运行时间、评测状态（如 `ok`, `wa`, `tle`, `re`）等详细信息。
   - 如果配置了期望得分（`expected`），当实际得分与期望不符时，会在日志中给出错误提示。
 
 - **打包评测（Packed Scoring）**:
@@ -183,12 +186,14 @@ python -m tuack.ren <format> [options]
   - 支持国际化（i18n），可以根据需要生成不同语言的题面（如中文 `zh-cn`、英文 `en`）。
 
 - **动态内容生成**:
-  - **表格**: 支持从 `.py`, `.json`, `.yaml` 文件中读取数据并动态渲染成表格。
-  - **图片和资源**: 自动处理 `resources/` 目录下的图片等资源文件，并将其嵌入到输出文档中。
-  - **代码片段**: 可以将 `down/` 目录下的文件内容直接渲染到题面中，方便展示样例代码或数据。
+  - **表格**: 通过 `{{ tbl('table_name') }}` 语法调用。脚本会在题目工程的 `tables/` 目录下查找 `table_name.pyinc`, `table_name.json`, 或 `table_name.yaml` 文件，并使用对应的模板（如 `table.tex.jinja`）进行渲染。
+  - **图片和资源**: 通过 `{{ img('image.png') }}` 语法调用。脚本会自动处理 `resources/` 目录下的图片等资源文件，并将其嵌入到输出文档中。
+  - **代码片段**: 通过 `{{ down_file('example.cpp') }}` 语法调用。脚本会将题目工程 `down/` 目录下的文件内容直接渲染到题面中。
 
 - **依赖工具**:
-  - 渲染 `tex` 格式需要安装 `xelatex` 和 `pandoc`。
+  - **`jinja2`**: 所有模板渲染的核心依赖。
+  - **`pandoc`**: 用于 Markdown 与 LaTeX/HTML/DokuWiki 等格式之间的转换。
+  - **`xelatex`**: 用于将 `.tex` 文件编译成 PDF。
   - 渲染 `html` 和 `doku` 格式需要安装 `pandoc`。
   - 所有模板渲染都需要安装 `jinja2`。
 
@@ -222,12 +227,15 @@ python -m tuack.dump <format>
 
 - **`loj` / `ipuoj`**:
   - **功能**: 将题目直接上传或更新到 [LibreOJ](https://loj.ac) 或 IPU Online Judge 平台。
-  - **实现**: 通过模拟浏览器请求，自动填充题面、配置时空限制、上传数据和资源文件。
-  - **配置**: 需要在 `conf.json` 中配置对应平台的 `cookies` 等认证信息。
+  - **技术细节**:
+    - **数据打包**: 会将 `data/` 目录下的测试数据、`chk/chk.cpp`（如果存在）、`data.yml` 配置文件（自动生成）打包成 `data.zip`。
+    - **资源打包**: 会将 `resources/` 目录下的所有文件打包成 `resources.zip`。
+    - **API 调用**: 通过 POST 请求将题面、配置信息、`data.zip` 和 `resources.zip` 上传到目标 OJ。
+  - **配置**: 需要在 `~/.tuack/conf.json` 中配置对应平台的 `cookies` 等认证信息。
 
 - **`tuoj-down`**:
   - **功能**: 仅导出适用于 TUOJ 的下发数据（样例）。
-  - **输出**: 生成 `tuoj/down/` 目录，包含每个题目的样例输入和输出文件。
+  - **技术细节**: 将 `down/` 目录下的所有 `.in` 和 `.ans` 文件复制到 `tuoj/down/<problem_route>/` 目录下。
 
 ## `load` 命令
 
@@ -243,12 +251,19 @@ python -m tuack.load <format> <source_path>
 
 - **`tsinsen-oj`**:
   - **功能**: 从清橙 OJ 的 `.txt` 格式文件导入题目。
-  - **实现**: 解析 `.txt` 文件中的各个字段（如题面、时空限制、数据、标程），并将其转换为 `tuack` 的配置和文件结构。
+  - **技术细节**:
+    - **题面**: `Description` 字段内容会被提取并保存到 `statement/zh-cn.md`。
+    - **数据**: `InData` 和 `OutData` 字段内容会被提取并依次保存为 `data/1.in`, `data/1.ans`, `data/2.in`, `data/2.ans`, ...
+    - **标程/校验器**: `Solution` 和 `Judger` 字段内容会分别保存到 `tsinsen-oj/std/std.cpp` 和 `data/chk/chk.cpp`。
+    - **配置**: 时空限制、标题等信息会被更新到 `conf.yaml` 中。
   - **用法**: `python -m tuack.load tsinsen-oj problem.txt`
 
 - **`loj` / `ipuoj`**:
   - **功能**: 从 LibreOJ 或 IPU Online Judge 的题目页面 URL 导入题目。
-  - **实现**: 访问题目 URL 的 `/export` 接口，下载 JSON 格式的题目数据，并自动导入题面、时空限制、数据等。
+  - **技术细节**:
+    - **API**: 访问题目 URL 的 `/export` 接口获取 JSON 数据，并访问 `/testdata/download` 接口下载数据包。
+    - **文件**: 题面被保存到 `statement/zh-cn.md`，数据包解压到 `data/` 目录，附加文件解压到 `down/` 目录。
+    - **配置**: `conf.yaml` 会根据下载的 JSON 数据进行更新。
   - **用法**: `python -m tuack.load loj https://loj.ac/problem/1`
 
 - **`data`**:
@@ -258,7 +273,9 @@ python -m tuack.load <format> <source_path>
     - `data-zip`: 强制指定源为 `.zip` 文件。
     - `data-tar`: 强制指定源为 `.tar` 文件。
     - `data-rar`: 强制指定源为 `.rar` 文件。
-  - **实现**: 自动识别输入（`.in`, `input`）和输出（`.ans`, `.out`）文件对，并将其复制到当前题目的 `data/` 目录下，然后更新配置文件。
+  - **技术细节**:
+    - **匹配规则**: 脚本会递归扫描源目录，并尝试根据文件名匹配输入/输出文件对。它主要识别 `*input*`/`*output*` 和 `*.in`/`*.out` 或 `*.ans` 这样的模式。例如，`problem1.in` 会和 `problem1.ans` 配对。
+    - **导入**: 成功配对的文件会被重命名并复制到当前题目的 `data/` 目录下，命名规则为 `1.in`, `1.ans`, `2.in`, `2.ans`, ...
   - **用法**: `python -m tuack.load data /path/to/data_folder`
 
 ## `doc` 命令
@@ -274,17 +291,21 @@ python -m tuack.doc <subcommand> [args...]
 ### 子命令
 
 - **`load`**:
-  - **功能**: 从一个外部文件（如 `.md`, `.html`）导入题面。它会使用 `pandoc` 将输入文件转换为 `tuack` 标准的 Markdown 格式。
+  - **功能**: 从一个外部文件（如 `.md`, `.html`）导入题面。
+  - **技术细节**: 使用 `pandoc` 将输入文件转换为 Markdown，并覆盖 `statement/zh-cn.md` 文件。
   - **用法**: `python -m tuack.doc load statement.html`
 
 - **`format`**:
   - **功能**: 对当前 `tuack` 工程中的题面文件（`statement/zh-cn.md`）进行格式化。
-  - **实现**: 自动识别题面中的标题（如“题目描述”、“输入格式”），并将其转换为 `{{ s('title') }}` 格式的模板调用。同时，它还能解析样例数据，并将其分离到 `down/` 目录下。
+  - **技术细节**:
+    - **标题转换**: 自动识别 Markdown 标题（如 `## 题目描述`），并将其转换为 `{{ s('description') }}` 格式的模板调用。
+    - **样例分离**: 识别 `## 样例` 部分的内容，将其中的输入和输出代码块分别提取出来，并保存为 `down/1.in`, `down/1.ans`, `down/2.in`, ...
+    - **图片下载**: 自动识别 Markdown 或 HTML 格式的图片链接，下载图片并保存到 `resources/` 目录，然后将链接替换为 `{{ img(...) }}` 模板调用。
   - **注意**: 这是一个有风险的操作，建议在执行前备份题面文件。
 
 - **`check`**:
   - **功能**: 检查题面中的格式问题，如中英文之间缺少空格、使用全角标点等。
-  - **实现**: 依赖一个名为 `format` 的可执行文件（通过 `tuack.install format` 安装）来进行检查。
+  - **技术细节**: 调用 `~/.tuack/format-linux` (或对应系统的可执行文件) 来进行检查。该检查器本身是用 `flex` 和 `bison` 实现的。
   - **输出**: 在控制台输出详细的格式问题报告，包括行号、列号和问题描述。
 
 ## `install` 命令
