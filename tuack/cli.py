@@ -10,15 +10,15 @@ def main():
         print("""
 tuack - OI/ICPC 题目管理工具
 
-用法: tuack <command> [args...]
+用法：tuack <command> [args...]
 
-命令:
-    gen, test, ren, dump, load, doc, install
+命令：
+    gen, test, ren, dump, load, doc, install, ng-export
         """)
         return
 
     command = sys.argv[1]
-    
+
     modules = {
         'gen': 'tuack.gen',
         'test': 'tuack.test',
@@ -27,20 +27,21 @@ tuack - OI/ICPC 题目管理工具
         'load': 'tuack.load',
         'doc': 'tuack.doc',
         'install': 'tuack.install',
+        'ng-export': 'tuack.ng_export',
     }
-    
+
     if command not in modules:
-        print(f"错误: 未知命令 '{command}'")
+        print(f"错误：未知命令 '{command}'")
         sys.exit(1)
-    
+
     sys.argv = [modules[command]] + sys.argv[2:]
-    
+
     try:
         runpy.run_module(modules[command], run_name='__main__')
     except SystemExit:
         raise
     except Exception as e:
-        print(f"执行 '{command}' 时出错: {e}")
+        print(f"执行 '{command}' 时出错：{e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

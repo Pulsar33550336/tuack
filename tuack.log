@@ -1,0 +1,42 @@
+11:39:38 | INFO | 加载项目：name for programmers (contest)
+11:39:38 | INFO | 开始迁移：name for programmers (contest) → /tmp/tuack-ng-test
+11:39:38 | INFO | 语言：zh-cn
+11:39:38 | INFO | 迁移 contest 配置：name for programmers
+11:39:38 | INFO | conf.json v2→v7
+11:39:38 | INFO | precaution: 未找到，已创建空 precaution.md
+11:39:38 | INFO | compile 配置：使用 a 的配置 ({"c": "-O2 -std=c11", "cpp": "-O2 -std=c++14", "java": "", "pas": "-O2", "py": ""})
+11:39:38 | INFO | compile 配置：{"c": "-O2 -std=c11", "cpp": "-O2 -std=c++14", "java": "", "pas": "-O2", "py": ""}
+11:39:38 | INFO | 迁移比赛日：day
+11:39:38 | INFO | conf.json v2→v7
+11:39:38 | INFO | 迁移题目：a
+11:39:38 | INFO | 题面：zh-cn.md
+11:39:38 | INFO | -> statement.md (statement.md) [1 self.title() removed]
+11:39:38 | INFO | conf.json v2→v7
+11:39:55 | INFO | 加载项目：name for programmers (contest)
+11:39:55 | INFO | 开始迁移：name for programmers (contest) → /tmp/tuack-ng-test
+11:39:55 | INFO | 语言：zh-cn
+11:39:55 | INFO | 迁移 contest 配置：name for programmers
+11:39:55 | INFO | conf.json v2→v7
+11:39:55 | INFO | precaution: 未找到，已创建空 precaution.md
+11:39:55 | INFO | compile 配置：使用 a 的配置 ({"c": "-O2 -std=c11", "cpp": "-O2 -std=c++14", "java": "", "pas": "-O2", "py": ""})
+11:39:55 | INFO | compile 配置：{"c": "-O2 -std=c11", "cpp": "-O2 -std=c++14", "java": "", "pas": "-O2", "py": ""}
+11:39:55 | INFO | 迁移比赛日：day
+11:39:55 | INFO | conf.json v2→v7
+11:39:55 | INFO | 迁移题目：a
+11:39:55 | INFO | 题面：zh-cn.md
+11:39:55 | INFO | -> statement.md (statement.md) [1 self.title() removed]
+11:39:55 | INFO | conf.json v2→v7
+11:45:01 | INFO | 加载项目：name for programmers (contest)
+11:45:01 | INFO | 开始迁移：name for programmers (contest) → /tmp/tuack-ng-test
+11:45:01 | INFO | 语言：zh-cn
+11:45:01 | INFO | 迁移 contest 配置：name for programmers
+11:45:01 | INFO | conf.json v2→v7
+11:45:01 | INFO | precaution: 未找到，已创建空 precaution.md
+11:45:01 | INFO | compile 配置：使用 a 的配置 ({"c": "-O2 -std=c11", "cpp": "-O2 -std=c++14", "java": "", "pas": "-O2", "py": ""})
+11:45:01 | INFO | compile 配置：{"c": "-O2 -std=c11", "cpp": "-O2 -std=c++14", "java": "", "pas": "-O2", "py": ""}
+11:45:01 | INFO | 迁移比赛日：day
+11:45:01 | INFO | conf.json v2→v7
+11:45:01 | INFO | 迁移题目：a
+11:45:01 | INFO | 题面：zh-cn.md
+11:45:01 | INFO | -> statement.md (statement.md) [1 self.title() removed]
+11:45:01 | INFO | conf.json v2→v7
